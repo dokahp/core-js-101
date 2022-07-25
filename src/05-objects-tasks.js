@@ -114,37 +114,88 @@ function fromJSON(proto, json) {
  */
 
 const cssSelectorBuilder = {
-  result: '',
-  element(/* value */) {
-    throw new Error('Not implemented');
+  resultString: '',
+  elementOrder: 0,
+  idOrder: 0,
+  pseudoOrder: 0,
+  twiceTimeError: 'Element, id and pseudo-element should not occur more then one time inside the selector',
+  orderError: 'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+  element(value) {
+    this.checkQueueCorrectness(1);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.elementOrder = this.elementOrder + 1;
+    if (builder.elementOrder > 1) {
+      throw new Error(this.twiceTimeError);
+    }
+    this.order = 1;
+    builder.resultString += `${this.resultString}${value}`;
+    return builder;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    this.checkQueueCorrectness(2);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.idOrder = this.idOrder + 1;
+    builder.order = 2;
+
+    if (builder.idOrder > 1) {
+      throw new Error(this.twiceTimeError);
+    }
+    builder.resultString = `${this.resultString}#${value}`;
+    return builder;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    this.checkQueueCorrectness(3);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.order = 3;
+    builder.resultString = `${this.resultString}.${value}`;
+    return builder;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    this.checkQueueCorrectness(4);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.order = 4;
+    builder.resultString = `${this.resultString}[${value}]`;
+    return builder;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    this.checkQueueCorrectness(5);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.order = 5;
+    builder.resultString = `${this.resultString}:${value}`;
+    return builder;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    this.checkQueueCorrectness(6);
+    const builder = Object.create(cssSelectorBuilder);
+    builder.pseudoOrder = this.pseudoOrder + 1;
+    builder.order = 6;
+    if (builder.pseudoOrder > 1) {
+      throw new Error(this.twiceTimeError);
+    }
+    builder.resultString = `${this.resultString}::${value}`;
+    return builder;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  stringify() {
+    return this.resultString;
   },
-  // stringify() {
-  //   return this.result;
-  // },
+
+  combine(selector1, combinator, selector2) {
+    const builder = Object.create(cssSelectorBuilder);
+    builder.resultString = `${selector1.resultString} ${combinator} ${selector2.resultString}`;
+    return builder;
+  },
+
+  checkQueueCorrectness(num) {
+    if (this.order > num) {
+      throw new Error(this.orderError);
+    }
+  },
 };
 
 module.exports = {
